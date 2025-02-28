@@ -1,3 +1,4 @@
+# python
 import uuid
 from flask_sqlalchemy import SQLAlchemy
 
@@ -9,8 +10,8 @@ class Survey(db.Model):
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
 
-    questions = db.relationship('Question', backref='survey', cascade="application, delete-orphan", lazy=True)
-    responses = db.relationship('Response', backref='survey', cascade="application, delete-orphan", lazy=True)
+    questions = db.relationship('Question', backref='survey', cascade="all, delete-orphan", lazy=True)
+    responses = db.relationship('Response', backref='survey', cascade="all, delete-orphan", lazy=True)
 
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
