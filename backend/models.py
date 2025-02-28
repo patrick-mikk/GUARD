@@ -13,6 +13,7 @@ class Survey(db.Model):
     questions = db.relationship('Question', backref='survey', cascade="all, delete-orphan", lazy=True)
     responses = db.relationship('Response', backref='survey', cascade="all, delete-orphan", lazy=True)
 
+
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     survey_id = db.Column(db.Integer, db.ForeignKey('survey.id'), nullable=False)
