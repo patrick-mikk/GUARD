@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>GUARD Platform – Home</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav>
+    <a href="index.html">Home</a> |
+    <a href="create_survey.html">Create Survey</a>
+  </nav>
+
+  <main>
+    <h1>Welcome to the GUARD Platform!</h1>
+    <p>Create and share surveys easily via our separate front end. </p>
+    <p><a href="create_survey.html">Click here to create a new survey</a>.</p>
+
+    <hr />
+
+    <section>
+      <h2>All Surveys</h2>
+      <ul id="survey-list"></ul>
+    </section>
+  </main>
+
+  <script src="js/main.js"></script>
+  <script>
+    // On load, fetch the list of application surveys from the API and display them
+    document.addEventListener('DOMContentLoaded', async () => {
+      const surveyList = document.getElementById('survey-list');
+      try {
+        const res = await fetch('http://localhost:5000/api/surveys');
+        if (!res.ok) throw new Error('Failed to get surveys');
+        const surveys = await res.json();
+
+        surveys.forEach(s => {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <strong>${s.title}</strong> -
+            <a href="survey.html?survey_id=${s.unique_id}">Take Survey</a> |
+            <a href="results.html?survey_id=${s.unique_id}">View Results</a>
+          `;
+          surveyList.appendChild(li);
+        });
+      } catch (err) {
+        console.error(err);
+        surveyList.textContent = 'Error loading surveys.';
+      }
+    });
+  </script>
+</body>
+</html>

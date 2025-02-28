@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Take Survey - GUARD Platform</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav>
+    <a href="index.html">Home</a> |
+    <a href="create_survey.html">Create Survey</a>
+  </nav>
+
+  <main>
+    <h1 id="survey-title"></h1>
+    <p id="survey-desc"></p>
+    <form id="take-survey-form"></form>
+  </main>
+
+  <script src="js/main.js"></script>
+  <script>
+    async function loadSurvey(unique_id) {
+      try {
+        const res = await fetch(`http://localhost:5000/api/surveys/${unique_id}`);
+        if (!res.ok) throw new Error('Survey not found');
+        const survey = await res.json();
+
+        document.getElementById('survey-title').textContent = survey.title;
+        document.getElementById('survey-desc').textContent = survey.description;
+
+        const form = document.getElementById('take-survey-form');
+        form.innerHTML = ''; // Clear out any old contents
+
+        survey.questions.forEach(q => {
+          const wrapper = document.createElement('div');
+          wrapper.classList.add('form-group');
+
+          const label = document.createElement('label');
+          label.textContent = q.question_text;
+
+          // For simplicity, use <input type="text"> for application short/long
+          // Or you might adapt to different question_type logic
+          const input = document.createElement('input');
+          input.name = `question_${q.id}`;
+          input.type = 'text';
+          input.required = true;
+
+          // If question_type is "dropdown" or "multiselect", etc.,
+          // you'd create the appropriate <select> or multiple <input>
+          // here instead of a text input.
+
+          wrapper.appendChild(label);
+          wrapper.appendChild(document.createElement('br'));
+          wrapper.appendChild(input);
+
+          form.appendChild(wrapper);
+        });
+
+        const btn = document.createElement('button');
+        btn.type = 'submit';
+        btn.textContent = 'Submit Survey';
+        form.appendChild(btn);
+
+        // Attach a submit handler
+        form.onsubmit = async (e) => {
+          e.preventDefault();
+          const formData = new FormData(form);
+          const answersObj = {};
+          survey.questions.forEach(q => {
+            answersObj[q.id] = formData.get(`question_${q.id}`);
+          });
+
+          const response = await fetch(`http://localhost:5000/api/surveys/${unique_id}/responses`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ answers: JSON.stringify(answersObj) })
+          });
+          if (!response.ok) {
+            alert('Error submitting survey');
+            return;
+          }
+          alert('Thanks for your response!');
+          // Optionally redirect or clear
+          window.location.reload();
+        };
+
+      } catch (err) {
+        console.error(err);
+        document.body.innerHTML = '<h1>Survey Not Found</h1>';
+      }
+    }
+
+    // Parse ?survey_id=... from the query string
+    const urlParams = new URLSearchParams(window.location.search);
+    const survey_id = urlParams.get('survey_id');
+    if (!survey_id) {
+      document.body.innerHTML = '<h1>Missing survey_id in URL</h1>';
+    } else {
+      loadSurvey(survey_id);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Create Survey - GUARD Platform</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav>
+    <a href="index.html">Home</a> |
+    <a href="create_survey.html">Create Survey</a>
+  </nav>
+
+  <main>
+    <h1>Create a New Survey</h1>
+    <form id="create-survey-form">
+      <label for="title">Survey Title:</label><br />
+      <input type="text" id="title" name="title" required /><br /><br />
+
+      <label for="description">Description:</label><br />
+      <textarea id="description" name="description"></textarea><br /><br />
+
+      <div id="questions-container">
+        <h3>Questions</h3>
+        <!-- Dynamically appended question blocks go here -->
+      </div>
+
+      <button type="button" id="add-question">Add Question</button>
+      <br /><br />
+
+      <button type="submit">Create Survey</button>
+    </form>
+  </main>
+
+  <script src="js/main.js"></script>
+  <script>
+    // Basic logic to dynamically add question blocks,
+    // then submit them to your Flask API as JSON
+    let questionCount = 0;
+
+    function addQuestionBlock() {
+      const container = document.getElementById('questions-container');
+      const block = document.createElement('div');
+      block.classList.add('question-block');
+      block.innerHTML = `
+        <label>Question Text:</label><br />
+        <input type="text" name="question_text_${questionCount}" required/><br />
+        <label>Question Type:</label><br />
+        <select name="question_type_${questionCount}">
+            <option value="short">Short Text</option>
+            <option value="long">Long Text</option>
+            <option value="dropdown">Dropdown</option>
+            <option value="multiselect">Multi-Select</option>
+            <option value="rating">Rating</option>
+            <option value="date">Date</option>
+        </select><br />
+        <label>Options (comma separated if applicable):</label><br />
+        <input type="text" name="options_${questionCount}" /><br /><br />
+      `;
+      container.appendChild(block);
+      questionCount++;
+    }
+
+    document.getElementById('add-question').addEventListener('click', () => {
+      addQuestionBlock();
+    });
+
+    // Add one initial question block by default
+    addQuestionBlock();
+
+    const form = document.getElementById('create-survey-form');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+
+      // Build JSON object to post to backend
+      const data = {
+        title: formData.get('title'),
+        description: formData.get('description'),
+        questions: []
+      };
+
+      // Loop over question blocks
+      for (let i = 0; i < questionCount; i++) {
+        const qText = formData.get(`question_text_${i}`);
+        const qType = formData.get(`question_type_${i}`);
+        const qOpts = formData.get(`options_${i}`);
+        if (qText) {
+          data.questions.push({
+            question_text: qText,
+            question_type: qType,
+            options: qOpts
+          });
+        }
+      }
+
+      try {
+        const res = await fetch('http://localhost:5000/api/surveys', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (!res.ok) throw new Error('Failed to create survey');
+        const json = await res.json();
+        alert('Survey created successfully! Unique ID: ' + json.unique_id);
+        window.location = `survey.html?survey_id=${json.unique_id}`;
+      } catch (err) {
+        console.error(err);
+        alert('Error creating survey');
+      }
+    });
+  </script>
+</body>
+</html>
