@@ -5,3 +5,5 @@ psycopg2-binary==2.9.9 # For PostgreSQL support, can use sqlite3 for development
 python-dotenv==1.0.1
 shortuuid==1.0.11 # For generating unique response IDs
 gunicorn==21.2.0 # For production deployment 
+Flask
+Flask-SQLAlchemy

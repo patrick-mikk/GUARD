@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Survey Results - GUARD Platform</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav>
+    <a href="index.html">Home</a> |
+    <a href="create_survey.html">Create Survey</a>
+  </nav>
+
+  <main>
+    <h1 id="results-title"></h1>
+    <p id="results-desc"></p>
+    <table id="results-table" border="1">
+      <thead id="results-thead"></thead>
+      <tbody id="results-tbody"></tbody>
+    </table>
+  </main>
+
+  <script src="js/main.js"></script>
+  <script>
+    async function loadResults(unique_id) {
+      try {
+        // First get the survey to know the question texts
+        const surveyRes = await fetch(`http://localhost:5000/api/surveys/${unique_id}`);
+        if (!surveyRes.ok) throw new Error('Survey not found');
+        const surveyData = await surveyRes.json();
+
+        // Display the survey title/desc
+        document.getElementById('results-title').textContent = "Results for: " + surveyData.title;
+        document.getElementById('results-desc').textContent = surveyData.description;
+
+        // Then get responses
+        const respRes = await fetch(`http://localhost:5000/api/surveys/${unique_id}/responses`);
+        if (!respRes.ok) throw new Error('Failed to get responses');
+        const responses = await respRes.json();
+
+        // Build table headers
+        const thead = document.getElementById('results-thead');
+        thead.innerHTML = '';
+        const headerRow = document.createElement('tr');
+        headerRow.innerHTML = `<th>Response ID</th>`;
+        surveyData.questions.forEach(q => {
+          const th = document.createElement('th');
+          th.textContent = q.question_text;
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+
+        // Build table rows
+        const tbody = document.getElementById('results-tbody');
+        tbody.innerHTML = '';
+
+        responses.forEach(r => {
+          const row = document.createElement('tr');
+          row.innerHTML = `<td>${r.response_id}</td>`;
+          const answersObj = JSON.parse(r.answers);
+          // answers is stored as a JSON string with question_id -> user input
+
+          surveyData.questions.forEach(q => {
+            const cell = document.createElement('td');
+            cell.textContent = answersObj[q.id] || '';
+            row.appendChild(cell);
+          });
+          tbody.appendChild(row);
+        });
+
+      } catch (err) {
+        console.error(err);
+        document.body.innerHTML = '<h1>Error loading results</h1>';
+      }
+    }
+
+    // Parse ?survey_id=... from the query string
+    const urlParams = new URLSearchParams(window.location.search);
+    const survey_id = urlParams.get('survey_id');
+    if (!survey_id) {
+      document.body.innerHTML = '<h1>Missing survey_id in URL</h1>';
+    } else {
+      loadResults(survey_id);
+    }
+  </script>
+</body>
+</html>
